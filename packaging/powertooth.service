@@ -9,6 +9,8 @@ ExecStart=/usr/local/bin/powertooth-host --device /dev/powertooth
 Restart=on-failure
 RestartSec=2
 SupplementaryGroups=dialout
+StandardOutput=append:/var/log/powertooth/host.log
+StandardError=append:/var/log/powertooth/host.log
 NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=true
@@ -16,4 +18,3 @@ PrivateTmp=true
 
 [Install]
 WantedBy=multi-user.target
-

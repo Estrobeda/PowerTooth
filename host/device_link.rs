@@ -10,6 +10,22 @@ use tokio_serial::{SerialPortBuilderExt, SerialStream};
 
 use crate::protocol::{Command, Message, decode, encode};
 
+#[cfg(feature = "debug-logging")]
+fn log_outbound(line: &str) {
+    eprintln!("host -> ESP32: {}", line.trim_end());
+}
+
+#[cfg(not(feature = "debug-logging"))]
+fn log_outbound(_: &str) {}
+
+#[cfg(feature = "debug-logging")]
+fn log_inbound(line: &str) {
+    eprintln!("ESP32 -> host: {}", line.trim_end());
+}
+
+#[cfg(not(feature = "debug-logging"))]
+fn log_inbound(_: &str) {}
+
 pub struct HostLink {
     lines: Lines<BufReader<ReadHalf<SerialStream>>>,
     writer: WriteHalf<SerialStream>,
@@ -30,14 +46,16 @@ impl HostLink {
     }
 
     pub async fn send(&mut self, command: Command) -> Result<()> {
-        self.writer.write_all(encode(command).as_bytes()).await?;
+        let line = encode(command);
+        log_outbound(&line);
+        self.writer.write_all(line.as_bytes()).await?;
         self.expect_ok().await
     }
 
     pub async fn list(&mut self) -> Result<BTreeSet<Address>> {
-        self.writer
-            .write_all(encode(Command::List).as_bytes())
-            .await?;
+        let line = encode(Command::List);
+        log_outbound(&line);
+        self.writer.write_all(line.as_bytes()).await?;
         let mut devices = BTreeSet::new();
         loop {
             match self.next_message().await? {
@@ -63,6 +81,7 @@ impl HostLink {
                 .next_line()
                 .await?
                 .context("ESP32 host link disconnected")?;
+            log_inbound(&line);
             if let Some(message) = decode(&line) {
                 return Ok(message);
             }
@@ -87,6 +106,7 @@ impl HostLink {
                 .await
                 .context("timed out waiting for ESP32")??
                 .context("ESP32 host link disconnected")?;
+            log_inbound(&line);
             if let Some(message) = decode(&line) {
                 return Ok(message);
             }

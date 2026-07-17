@@ -103,6 +103,31 @@ host/target/release/powertooth-host --list-bluez
 host/target/release/powertooth-host --device /dev/ttyACM0
 ```
 
+### Create an installable Linux bundle
+
+Run the packaging script on Linux. A normal macOS Rust build produces a macOS
+binary and cannot be copied to a Linux machine.
+
+```sh
+# Normal release
+sh host/package-linux.sh
+
+# Release with every host/ESP32 protocol line logged
+sh host/package-linux.sh --debug
+```
+
+The ZIP archive is written under `host/bin/build/`. Copy it to the destination
+Linux machine, unzip it, enter the extracted directory, and run:
+
+```sh
+sh ./install.sh
+```
+
+The installer installs runtime dependencies on supported distributions, sets up
+the stable `/dev/powertooth` device link, enables the systemd service, and writes
+host output to `/var/log/powertooth/host.log`. See [Linux installation](docs/INSTALL.md)
+for service and troubleshooting commands.
+
 See [hardware wiring](docs/HARDWARE.md), [installation](docs/INSTALL.md), and the [validation checklist](docs/VALIDATION.md) before connecting a motherboard.
 
 ## AI agent notice

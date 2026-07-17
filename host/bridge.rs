@@ -12,6 +12,9 @@ use crate::{
 };
 
 pub async fn run(args: Args) -> Result<()> {
+    #[cfg(feature = "debug-logging")]
+    eprintln!("PowerTooth host protocol debug logging enabled");
+
     let session = Session::new().await.context("connect to BlueZ D-Bus")?;
     let adapter = session
         .default_adapter()

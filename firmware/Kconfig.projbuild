@@ -1,0 +1,96 @@
+menu "PowerTooth"
+
+    config POWERTOOTH_DEBUG_LOGS
+        bool "Debug logging"
+        default y
+        help
+            Enable informational and diagnostic logs from all PowerTooth
+            components. Protocol messages sent to the host, such as PT/1 PAIR,
+            and ESP-IDF system/error logs are not debug logs and remain enabled.
+
+    menu "Board pins and polarity"
+        config POWERTOOTH_CASE_BUTTON_GPIO
+            int "Case button input GPIO"
+            default 3
+        config POWERTOOTH_POWER_LED_SENSE_GPIO
+            int "Motherboard power LED sense GPIO"
+            default 4
+        config POWERTOOTH_POWER_SWITCH_GPIO
+            int "Motherboard power switch output GPIO"
+            default 5
+        config POWERTOOTH_CASE_LED_GPIO
+            int "Case power LED output GPIO"
+            default 6
+        config POWERTOOTH_POWER_SWITCH_ACTIVE_HIGH
+            bool "Power switch driver is active high"
+            default y
+        config POWERTOOTH_POWER_LED_ACTIVE_HIGH
+            bool "Power LED sense is active high"
+            default y
+        config POWERTOOTH_CASE_LED_ACTIVE_HIGH
+            bool "Case LED driver is active high"
+            default y
+        config POWERTOOTH_CASE_BUTTON_ACTIVE_LOW
+            bool "Case button is active low"
+            default y
+    endmenu
+
+    menu "Power and controls"
+        config POWERTOOTH_POWER_PULSE_MS
+            int "Power switch pulse duration (ms)"
+            range 100 2000
+            default 500
+        config POWERTOOTH_WAKE_COOLDOWN_MS
+            int "Controller wake cooldown (ms)"
+            range 1000 300000
+            default 30000
+        config POWERTOOTH_PAIR_HOLD_MS
+            int "Case button pairing hold time (ms)"
+            range 500 10000
+            default 2000
+        config POWERTOOTH_BUTTON_DEBOUNCE_MS
+            int "Minimum valid button press (ms)"
+            range 10 500
+            default 50
+        config POWERTOOTH_LED_SAMPLE_COUNT
+            int "Samples used for stable PC state"
+            range 1 100
+            default 20
+        config POWERTOOTH_LED_SAMPLE_INTERVAL_MS
+            int "Power LED sample interval (ms)"
+            range 10 1000
+            default 100
+        config POWERTOOTH_LED_ON_MIN_SAMPLES
+            int "High samples required for PC on"
+            range 1 100
+            default 8
+        config POWERTOOTH_PAIR_FLASH_MS
+            int "Pairing LED on/off interval (ms)"
+            range 50 2000
+            default 150
+        config POWERTOOTH_PAIR_FLASH_COUNT
+            int "Pairing LED flashes per burst"
+            range 1 10
+            default 3
+        config POWERTOOTH_PAIR_FLASH_PAUSE_MS
+            int "Pause between pairing LED bursts (ms)"
+            range 100 5000
+            default 1000
+    endmenu
+
+    menu "Bluetooth and registry"
+        config POWERTOOTH_MAX_DEVICES
+            int "Maximum synchronized gamepads"
+            range 1 32
+            default 10
+        config POWERTOOTH_BLE_SCAN_INTERVAL
+            hex "BLE scan interval (0.625 ms units)"
+            range 0x0004 0x4000
+            default 0x0050
+        config POWERTOOTH_BLE_SCAN_WINDOW
+            hex "BLE scan window (0.625 ms units)"
+            range 0x0004 0x4000
+            default 0x0030
+    endmenu
+
+endmenu

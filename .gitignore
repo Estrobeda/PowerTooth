@@ -1,0 +1,5 @@
+host/target/
+firmware/build/
+firmware/sdkconfig
+sdkconfig.old
+.DS_Store

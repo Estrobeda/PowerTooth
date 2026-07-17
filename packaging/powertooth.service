@@ -1,0 +1,19 @@
+[Unit]
+Description=PowerTooth BlueZ gamepad bridge
+After=bluetooth.service dev-powertooth.device
+Wants=bluetooth.service
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/powertooth-host --device /dev/powertooth
+Restart=on-failure
+RestartSec=2
+SupplementaryGroups=dialout
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
+

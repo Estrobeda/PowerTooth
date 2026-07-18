@@ -1,1 +1,1 @@
-SUBSYSTEM=="tty", ATTRS{idVendor}=="303a", SYMLINK+="powertooth", GROUP="dialout", MODE="0660", TAG+="systemd"
+SUBSYSTEM=="tty", ATTRS{idVendor}=="303a", SYMLINK+="powertooth", GROUP="dialout", MODE="0660", ENV{ID_MM_DEVICE_IGNORE}="1", ENV{ID_MM_PORT_IGNORE}="1", TAG+="systemd"

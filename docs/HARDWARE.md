@@ -29,7 +29,7 @@ The ESP32 must be powered from a rail that remains available while the PC is off
 
 Run `idf.py menuconfig` and open **PowerTooth**. GPIO numbers, all four active polarities, power-pulse duration, cooldown, long-press time, debounce time, LED sampling, pairing flash rate, registry capacity, and BLE scan interval/window are build configuration—not source constants.
 
-The host's serial path and baud rate are runtime options. Native USB Serial/JTAG does not use a physical baud rate, but UART-console board variants must also set ESP-IDF's **Console UART baud rate** to the same value passed through `powertooth-host --baud`.
+The host's serial path and baud rate are runtime options. Native USB Serial/JTAG does not use a physical baud rate, but UART-console board variants must also set ESP-IDF's **Console UART baud rate** to the same value passed through `powertooth --baud`.
 
 ## Power-state interpretation
 

@@ -1,6 +1,6 @@
 [package]
-name = "powertooth-host"
-version = "0.1.0"
+name = "powertooth"
+version = "0.0.0-default"
 edition = "2024"
 
 [features]
@@ -16,7 +16,8 @@ tokio-serial = "5"
 
 [target.'cfg(target_os = "linux")'.dependencies]
 bluer = { version = "0.17", features = ["bluetoothd"] }
+libc = "0.2"
 
 [[bin]]
-name = "powertooth-host"
+name = "powertooth"
 path = "main.rs"

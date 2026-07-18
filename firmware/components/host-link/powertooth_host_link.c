@@ -16,7 +16,7 @@ static const char *TAG = "host_link";
 #endif
 
 static void send_line(const char *body) {
-    printf("PT/1 %s\n", body);
+    printf("%s %s\n", CONFIG_POWERTOOTH_PROTOCOL_PREFIX, body);
     fflush(stdout);
 }
 
@@ -45,8 +45,10 @@ static void list_devices(void) {
 }
 
 static void handle(char *line) {
-    if (strncmp(line, "PT/1 ", 5) != 0) return;
-    char *command = line + 5;
+    const size_t prefix_length = strlen(CONFIG_POWERTOOTH_PROTOCOL_PREFIX);
+    if (strncmp(line, CONFIG_POWERTOOTH_PROTOCOL_PREFIX, prefix_length) != 0 ||
+        line[prefix_length] != ' ') return;
+    char *command = line + prefix_length + 1;
     if (strcmp(command, "HELLO") == 0) send_line("OK");
     else if (strcmp(command, "LIST") == 0) list_devices();
     else if (strncmp(command, "ADD ", 4) == 0) send_result(powertooth_registry_add(command + 4));
@@ -55,8 +57,6 @@ static void handle(char *line) {
     else if (strcmp(command, "SYNC") == 0) {
         powertooth_power_set_pairing(false);
         send_line("OK");
-    } else if (strcmp(command, "POWER?") == 0) {
-        send_line(powertooth_power_pc_is_on() ? "POWER ON" : "POWER OFF");
     } else {
         HOST_LOGW("Unknown command length=%u value='%s'", (unsigned)strlen(command), command);
         send_line("ERR unknown-command");

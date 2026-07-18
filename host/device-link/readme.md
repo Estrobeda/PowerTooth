@@ -10,7 +10,6 @@ Host to ESP32:
 - `PT/1 LIST` — return zero or more `DEVICE` lines followed by `END`.
 - `PT/1 RESET` — clear the registry.
 - `PT/1 SYNC` — mark reconciliation complete and stop pairing indication.
-- `PT/1 POWER?` — return `POWER ON` or `POWER OFF` from the motherboard LED sense input.
 
 ESP32 to host:
 

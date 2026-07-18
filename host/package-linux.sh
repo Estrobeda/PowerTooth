@@ -4,6 +4,7 @@ set -eu
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 PROJECT_DIR=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
 OUTPUT_DIR="$SCRIPT_DIR/bin/build"
+TARGET_DIR=${CARGO_TARGET_DIR:-$SCRIPT_DIR/target}
 
 if [ "$(uname -s)" != "Linux" ]; then
     echo "This script must run on Linux: a normal macOS Rust build cannot run on Linux." >&2
@@ -48,12 +49,12 @@ cargo test --locked --manifest-path "$SCRIPT_DIR/Cargo.toml" $FEATURE_ARGS
 cargo build --release --locked --manifest-path "$SCRIPT_DIR/Cargo.toml" $FEATURE_ARGS
 
 mkdir -p "$STAGE_DIR" "$OUTPUT_DIR"
-install -m 0755 "$SCRIPT_DIR/target/release/powertooth-host" "$STAGE_DIR/powertooth-host"
+install -m 0755 "$TARGET_DIR/release/powertooth" "$STAGE_DIR/powertooth"
 install -m 0644 "$PROJECT_DIR/packaging/powertooth.service" "$STAGE_DIR/powertooth.service"
 install -m 0644 "$PROJECT_DIR/packaging/99-powertooth.rules" "$STAGE_DIR/99-powertooth.rules"
 install -m 0644 "$PROJECT_DIR/packaging/powertooth.logrotate" "$STAGE_DIR/powertooth.logrotate"
 install -m 0755 "$PROJECT_DIR/packaging/install.sh" "$STAGE_DIR/install.sh"
-install -m 0644 "$PROJECT_DIR/AI_AGENT_NOTICE.md" "$STAGE_DIR/AI_AGENT_NOTICE.md"
+install -m 0755 "$PROJECT_DIR/packaging/uninstall.sh" "$STAGE_DIR/uninstall.sh"
 
 rm -f "$OUTPUT_DIR/$BUNDLE_NAME.zip"
 (cd "$TEMP_DIR" && zip -qr "$OUTPUT_DIR/$BUNDLE_NAME.zip" "$BUNDLE_NAME")

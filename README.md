@@ -41,47 +41,6 @@ Do not connect a motherboard header or 5 V rail directly to an ESP32 GPIO. Use
 the protection/driver stages shown below and verify motherboard header polarity
 with a multimeter.
 
-## Wiring diagram
-
-```mermaid
-flowchart LR
-    subgraph Case[Computer case]
-        Button[Case power button]
-        CaseLED[Case power LED]
-    end
-
-    subgraph ESP[ESP32-C3 or ESP32-C6]
-        GND[Ground]
-        GPIO3[GPIO 3<br/>case-button input]
-        GPIO4[GPIO 4<br/>power-LED sense]
-        GPIO5[GPIO 5<br/>power-switch output]
-        GPIO6[GPIO 6<br/>case-LED output]
-        Logic[PowerTooth firmware]
-    end
-
-    subgraph Interface[Protection and drivers]
-        LEDSense[Optocoupler or<br/>protected 3.3 V input]
-        SwitchDriver[Transistor or<br/>optocoupler driver]
-        LEDDriver[Current-limited<br/>LED driver]
-    end
-
-    subgraph Motherboard[Motherboard headers]
-        PLED[PLED header]
-        PWRSW[PWR SW header]
-    end
-
-    Button --> GPIO3
-    Button --> GND
-    GPIO3 --> Logic
-    Logic --> GPIO5
-    GPIO5 --> SwitchDriver --> PWRSW
-
-    PLED --> LEDSense --> GPIO4
-    GPIO4 --> Logic
-    Logic --> GPIO6
-    GPIO6 --> LEDDriver --> CaseLED
-```
-
 ## Build
 
 Firmware requires an ESP-IDF shell. Select the board actually connected:
@@ -94,39 +53,59 @@ idf.py build
 idf.py -p /dev/ttyACM0 flash monitor
 ```
 
+NimBLE is the default BLE host stack. To build with the optional Bluedroid
+scanner backend, recreate the configuration with the Bluedroid defaults overlay:
+
+```sh
+cd firmware
+idf.py fullclean
+SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.bluedroid" idf.py set-target esp32c6
+SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.bluedroid" idf.py build
+```
+
+You can also select either host stack in `idf.py menuconfig` under
+**Component config -> Bluetooth -> Host**. Only one host stack is compiled, and
+both backends expose the same PowerTooth scanner interface.
+
 Linux host:
 
 ```sh
 cargo test --manifest-path host/Cargo.toml
 cargo build --release --locked --manifest-path host/Cargo.toml
-host/target/release/powertooth-host --list-bluez
-host/target/release/powertooth-host --device /dev/ttyACM0
+host/target/release/powertooth --list-bluez
+host/target/release/powertooth --device /dev/ttyACM0
 ```
 
 ### Create an installable Linux bundle
 
-Run the packaging script on Linux. A normal macOS Rust build produces a macOS
-binary and cannot be copied to a Linux machine.
+The recommended publisher builds inside a disposable Fedora Podman container and
+writes the transferable ZIP to `published/`. It defaults to x86-64 Bazzite:
 
 ```sh
 # Normal release
-sh host/package-linux.sh
+sh ./publish.sh
 
 # Release with every host/ESP32 protocol line logged
-sh host/package-linux.sh --debug
+sh ./publish.sh --debug
+
+# ARM64 Bazzite instead of the default x86-64 target
+sh ./publish.sh --arch arm64
 ```
 
-The ZIP archive is written under `host/bin/build/`. Copy it to the destination
-Linux machine, unzip it, enter the extracted directory, and run:
+Podman can run this from Linux or from a macOS Podman machine; it uses emulation
+when the requested Linux architecture differs from the build computer. Copy the
+ZIP from `published/` to the Bazzite machine, unzip it, enter the extracted
+directory, and run:
 
 ```sh
 sh ./install.sh
 ```
 
-The installer installs runtime dependencies on supported distributions, sets up
-the stable `/dev/powertooth` device link, enables the systemd service, and writes
-host output to `/var/log/powertooth/host.log`. See [Linux installation](docs/INSTALL.md)
-for service and troubleshooting commands.
+The installer validates the CPU architecture and runtime libraries, avoids
+`rpm-ostree` package layering on Bazzite, sets up the stable `/dev/powertooth`
+device link, enables the systemd service, and writes host output to
+`/var/log/powertooth/host.log`. See [Linux installation](docs/INSTALL.md) for
+service and troubleshooting commands.
 
 See [hardware wiring](docs/HARDWARE.md), [installation](docs/INSTALL.md), and the [validation checklist](docs/VALIDATION.md) before connecting a motherboard.
 

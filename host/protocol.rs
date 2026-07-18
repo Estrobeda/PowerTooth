@@ -1,4 +1,4 @@
-const PREFIX: &str = "PT/1 ";
+const PREFIX: &str = env!("POWERTOOTH_DEFAULT_PROTOCOL_PREFIX");
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Command {
@@ -8,7 +8,6 @@ pub enum Command {
     List,
     Reset,
     Sync,
-    Power,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -19,7 +18,6 @@ pub enum Message {
     End,
     Pair,
     Wake(String),
-    Power(bool),
 }
 
 pub fn encode(command: Command) -> String {
@@ -30,13 +28,12 @@ pub fn encode(command: Command) -> String {
         Command::List => "LIST".into(),
         Command::Reset => "RESET".into(),
         Command::Sync => "SYNC".into(),
-        Command::Power => "POWER?".into(),
     };
-    format!("{PREFIX}{body}\n")
+    format!("{PREFIX} {body}\n")
 }
 
 pub fn decode(line: &str) -> Option<Message> {
-    let body = line.strip_prefix(PREFIX)?;
+    let body = line.strip_prefix(PREFIX)?.strip_prefix(' ')?;
     if body == "OK" {
         return Some(Message::Ok);
     }
@@ -45,12 +42,6 @@ pub fn decode(line: &str) -> Option<Message> {
     }
     if body == "PAIR" {
         return Some(Message::Pair);
-    }
-    if body == "POWER ON" {
-        return Some(Message::Power(true));
-    }
-    if body == "POWER OFF" {
-        return Some(Message::Power(false));
     }
     if let Some(value) = body.strip_prefix("ERR ") {
         return Some(Message::Error(value.into()));
@@ -70,40 +61,37 @@ mod tests {
 
     #[test]
     fn commands_are_framed_and_addresses_are_normalized() {
-        assert_eq!(encode(Command::Hello), "PT/1 HELLO\n");
+        assert_eq!(encode(Command::Hello), format!("{PREFIX} HELLO\n"));
         assert_eq!(
             encode(Command::Add("AA:BB:CC:DD:EE:FF".into())),
-            "PT/1 ADD aa:bb:cc:dd:ee:ff\n"
+            format!("{PREFIX} ADD aa:bb:cc:dd:ee:ff\n")
         );
         assert_eq!(
             encode(Command::Remove("AA:BB:CC:DD:EE:FF".into())),
-            "PT/1 REMOVE aa:bb:cc:dd:ee:ff\n"
+            format!("{PREFIX} REMOVE aa:bb:cc:dd:ee:ff\n")
         );
-        assert_eq!(encode(Command::List), "PT/1 LIST\n");
-        assert_eq!(encode(Command::Reset), "PT/1 RESET\n");
-        assert_eq!(encode(Command::Sync), "PT/1 SYNC\n");
-        assert_eq!(encode(Command::Power), "PT/1 POWER?\n");
+        assert_eq!(encode(Command::List), format!("{PREFIX} LIST\n"));
+        assert_eq!(encode(Command::Reset), format!("{PREFIX} RESET\n"));
+        assert_eq!(encode(Command::Sync), format!("{PREFIX} SYNC\n"));
     }
 
     #[test]
     fn responses_and_events_decode() {
-        assert_eq!(decode("PT/1 OK"), Some(Message::Ok));
+        assert_eq!(decode(&format!("{PREFIX} OK")), Some(Message::Ok));
         assert_eq!(
-            decode("PT/1 ERR registry-full"),
+            decode(&format!("{PREFIX} ERR registry-full")),
             Some(Message::Error("registry-full".into()))
         );
         assert_eq!(
-            decode("PT/1 DEVICE aa:bb:cc:dd:ee:ff"),
+            decode(&format!("{PREFIX} DEVICE aa:bb:cc:dd:ee:ff")),
             Some(Message::Device("aa:bb:cc:dd:ee:ff".into()))
         );
-        assert_eq!(decode("PT/1 END"), Some(Message::End));
-        assert_eq!(decode("PT/1 PAIR"), Some(Message::Pair));
+        assert_eq!(decode(&format!("{PREFIX} END")), Some(Message::End));
+        assert_eq!(decode(&format!("{PREFIX} PAIR")), Some(Message::Pair));
         assert_eq!(
-            decode("PT/1 WAKE aa:bb:cc:dd:ee:ff"),
+            decode(&format!("{PREFIX} WAKE aa:bb:cc:dd:ee:ff")),
             Some(Message::Wake("aa:bb:cc:dd:ee:ff".into()))
         );
-        assert_eq!(decode("PT/1 POWER ON"), Some(Message::Power(true)));
-        assert_eq!(decode("PT/1 POWER OFF"), Some(Message::Power(false)));
     }
 
     #[test]

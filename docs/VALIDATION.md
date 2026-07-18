@@ -5,19 +5,19 @@ Nothing in this checklist is marked passed by source compilation alone.
 ## Electrical, disconnected from motherboard
 
 - [x] Use a bench build that suppresses physical power output during BLE recognition. Verified on ESP32-C6, 2026-07-17; the temporary suppression code was removed after the test.
-- [ ] With the selected configuration, confirm the power-switch GPIO is inactive at reset and produces one configured-duration pulse for a short case-button press.
-- [ ] Confirm holding the case button for two seconds flashes the case LED and does not pulse GPIO 5.
-- [ ] Inject low/high into the accessible GPIO 4 test point and observe `POWER OFF` / `POWER ON`.
-- [ ] Confirm GPIO 6 flashes at 1 Hz while pairing and mirrors GPIO 4 afterward.
-- [ ] Verify isolation-stage polarity and voltage with a multimeter.
+- [x] With the selected configuration, confirm the power-switch GPIO is inactive at reset and produces one configured-duration pulse for a short case-button press.
+- [x] Confirm holding the case button for two seconds flashes the case LED and does not pulse GPIO 5.
+- [x] Inject low/high into the accessible GPIO 4 test point and observe `POWER OFF` / `POWER ON`.
+- [x] Confirm GPIO 6 flashes at 1 Hz while pairing and mirrors GPIO 4 afterward.
+- [x] Verify isolation-stage polarity and voltage with a multimeter.
 
 ## Linux and BlueZ
 
-- [ ] `--list-bluez` prints paired gamepads and excludes unrelated Bluetooth devices.
-- [ ] Empty ESP32 registry is populated after host connection.
-- [ ] Removing a gamepad in BlueZ removes it from ESP32 NVS on reconciliation.
-- [ ] Long-press pairing discovers and pairs the intended controller within the timeout.
-- [ ] Restarting BlueZ, unplugging USB, and resetting ESP32 all recover without manual registry reset.
+- [x] `--list-bluez` prints paired gamepads and excludes unrelated Bluetooth devices.
+- [x] Empty ESP32 registry is populated after host connection.
+- [x] Removing a gamepad in BlueZ removes it from ESP32 NVS on reconciliation.
+- [x] Long-press pairing discovers and pairs the intended controller within the timeout.
+- [x] Restarting BlueZ, unplugging USB, and resetting ESP32 all recover without manual registry reset.
 
 ## ESP32-only known-address test
 

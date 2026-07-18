@@ -1,9 +1,9 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "nvs_flash.h"
-#include "powertooth_ble.h"
+#include "powertooth_ble_scanner.h"
 #include "powertooth_host_link.h"
-#include "powertooth_power.h"
+#include "powertooth_power_control.h"
 #include "powertooth_registry.h"
 
 static void initialize_nvs(void) {

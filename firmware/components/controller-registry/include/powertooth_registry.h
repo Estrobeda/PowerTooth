@@ -6,6 +6,7 @@
 #include "esp_err.h"
 #include "sdkconfig.h"
 
+// Mac-address length.
 #define POWERTOOTH_ADDRESS_LENGTH 18
 
 esp_err_t powertooth_registry_init(void);

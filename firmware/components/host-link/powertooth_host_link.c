@@ -5,7 +5,7 @@
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "powertooth_power.h"
+#include "powertooth_power_control.h"
 #include "powertooth_registry.h"
 
 #ifdef CONFIG_POWERTOOTH_DEBUG_LOGS

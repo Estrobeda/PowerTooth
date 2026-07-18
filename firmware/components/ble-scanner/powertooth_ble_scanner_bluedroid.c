@@ -1,10 +1,10 @@
-#include "powertooth_ble.h"
+#include "powertooth_ble_scanner.h"
 
 #include "esp_bt.h"
 #include "esp_bt_main.h"
 #include "esp_gap_ble_api.h"
 #include "esp_log.h"
-#include "powertooth_power.h"
+#include "powertooth_power_control.h"
 #include "powertooth_registry.h"
 
 _Static_assert(CONFIG_POWERTOOTH_BLE_SCAN_WINDOW <= CONFIG_POWERTOOTH_BLE_SCAN_INTERVAL,
@@ -42,7 +42,7 @@ esp_err_t powertooth_ble_init(void) {
     ESP_ERROR_CHECK(esp_bluedroid_enable());
     ESP_ERROR_CHECK(esp_ble_gap_register_callback(gap_callback));
     static esp_ble_scan_params_t scan = {
-        .scan_type = BLE_SCAN_TYPE_ACTIVE,
+        .scan_type = BLE_SCAN_TYPE_PASSIVE,
         .own_addr_type = BLE_ADDR_TYPE_PUBLIC,
         .scan_filter_policy = BLE_SCAN_FILTER_ALLOW_ALL,
         .scan_interval = CONFIG_POWERTOOTH_BLE_SCAN_INTERVAL,

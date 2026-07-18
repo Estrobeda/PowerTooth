@@ -15,6 +15,7 @@ static char devices[CONFIG_POWERTOOTH_MAX_DEVICES][POWERTOOTH_ADDRESS_LENGTH];
 static size_t device_count;
 static SemaphoreHandle_t lock;
 
+// Normalizes and validates the MAC address.
 static bool normalize(const char *input, char output[POWERTOOTH_ADDRESS_LENGTH]) {
     if (strlen(input) != 17) return false;
     for (size_t i = 0; i < 17; ++i) {
@@ -30,6 +31,7 @@ static bool normalize(const char *input, char output[POWERTOOTH_ADDRESS_LENGTH])
     return true;
 }
 
+// Lookup registered device by address.
 static int find_locked(const char *address) {
     for (size_t i = 0; i < device_count; ++i) {
         if (strcmp(devices[i], address) == 0) return (int)i;
@@ -39,11 +41,17 @@ static int find_locked(const char *address) {
 
 static esp_err_t save_locked(void) {
     nvs_handle_t handle;
+    
     esp_err_t error = nvs_open(NVS_NAMESPACE, NVS_READWRITE, &handle);
-    if (error != ESP_OK) return error;
+    if (error != ESP_OK) 
+        return error;
+    
     error = nvs_set_blob(handle, "devices", devices, sizeof(devices));
-    if (error == ESP_OK) error = nvs_set_u8(handle, "count", (uint8_t)device_count);
-    if (error == ESP_OK) error = nvs_commit(handle);
+    if (error == ESP_OK) 
+        error = nvs_set_u8(handle, "count", (uint8_t)device_count);
+    if (error == ESP_OK) 
+        error = nvs_commit(handle);
+
     nvs_close(handle);
     return error;
 }
@@ -51,15 +59,19 @@ static esp_err_t save_locked(void) {
 esp_err_t powertooth_registry_init(void) {
     lock = xSemaphoreCreateMutex();
     if (!lock) return ESP_ERR_NO_MEM;
+
     nvs_handle_t handle;
     if (nvs_open(NVS_NAMESPACE, NVS_READONLY, &handle) != ESP_OK) return ESP_OK;
+    
     size_t length = sizeof(devices);
     uint8_t count = 0;
+    
     if (nvs_get_blob(handle, "devices", devices, &length) == ESP_OK &&
         length == sizeof(devices) && nvs_get_u8(handle, "count", &count) == ESP_OK &&
         count <= CONFIG_POWERTOOTH_MAX_DEVICES) {
         device_count = count;
     }
+    
     nvs_close(handle);
     return ESP_OK;
 }
@@ -73,11 +85,13 @@ size_t powertooth_registry_count(void) {
 
 esp_err_t powertooth_registry_get(size_t index, char address[POWERTOOTH_ADDRESS_LENGTH]) {
     xSemaphoreTake(lock, portMAX_DELAY);
+
     if (index >= device_count) {
         xSemaphoreGive(lock);
         return ESP_ERR_NOT_FOUND;
     }
     strlcpy(address, devices[index], POWERTOOTH_ADDRESS_LENGTH);
+    
     xSemaphoreGive(lock);
     return ESP_OK;
 }

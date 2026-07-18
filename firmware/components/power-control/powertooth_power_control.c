@@ -1,4 +1,4 @@
-#include "powertooth_power.h"
+#include "powertooth_power_control.h"
 
 #include <string.h>
 #include "driver/gpio.h"
@@ -70,32 +70,23 @@ static void indication_task(void *unused) {
     int previous_output_level = -1;
     while (true) {
         if (pairing) {
+            POWER_LOGI("Pairing: flashing %d times", CONFIG_POWERTOOTH_PAIR_FLASH_COUNT);
             for (int flash = 0;
                  flash < CONFIG_POWERTOOTH_PAIR_FLASH_COUNT && pairing;
                  ++flash) {
-                int on_level = ACTIVE_LEVEL(CONFIG_POWERTOOTH_CASE_LED_ACTIVE_HIGH);
-                gpio_set_level(CASE_LED_GPIO, on_level);
-                if (on_level != previous_output_level) {
-                    POWER_LOGI("Case LED on (GPIO %d level=%d, pairing flash %d/%d)",
-                               CASE_LED_GPIO, on_level, flash + 1,
-                               CONFIG_POWERTOOTH_PAIR_FLASH_COUNT);
-                    previous_output_level = on_level;
-                }
+                gpio_set_level(CASE_LED_GPIO,
+                               ACTIVE_LEVEL(CONFIG_POWERTOOTH_CASE_LED_ACTIVE_HIGH));
                 vTaskDelay(pdMS_TO_TICKS(CONFIG_POWERTOOTH_PAIR_FLASH_MS));
-
-                int off_level = !ACTIVE_LEVEL(CONFIG_POWERTOOTH_CASE_LED_ACTIVE_HIGH);
-                gpio_set_level(CASE_LED_GPIO, off_level);
-                if (off_level != previous_output_level) {
-                    POWER_LOGI("Case LED off (GPIO %d level=%d, pairing flash %d/%d)",
-                               CASE_LED_GPIO, off_level, flash + 1,
-                               CONFIG_POWERTOOTH_PAIR_FLASH_COUNT);
-                    previous_output_level = off_level;
-                }
+                gpio_set_level(CASE_LED_GPIO,
+                               !ACTIVE_LEVEL(CONFIG_POWERTOOTH_CASE_LED_ACTIVE_HIGH));
                 vTaskDelay(pdMS_TO_TICKS(CONFIG_POWERTOOTH_PAIR_FLASH_MS));
             }
             if (pairing) {
+                POWER_LOGI("Pairing: waiting %d ms", CONFIG_POWERTOOTH_PAIR_FLASH_PAUSE_MS);
                 vTaskDelay(pdMS_TO_TICKS(CONFIG_POWERTOOTH_PAIR_FLASH_PAUSE_MS));
             }
+            // Force a fresh steady-state log line once pairing mode ends.
+            previous_output_level = -1;
             continue;
         }
 

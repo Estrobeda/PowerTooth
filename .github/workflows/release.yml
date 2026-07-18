@@ -1,0 +1,142 @@
+name: Release
+
+# Releases are created only for tags of the exact forms
+# x.y.z, x.y.z-alpha, x.y.z-beta, x.y.z-snapshot.
+# Anything else (for example 0.1.0-debug or v0.1.0) is ignored.
+on:
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+      - '[0-9]+.[0-9]+.[0-9]+-alpha'
+      - '[0-9]+.[0-9]+.[0-9]+-beta'
+      - '[0-9]+.[0-9]+.[0-9]+-snapshot'
+
+permissions:
+  contents: read
+
+jobs:
+  validate-tag:
+    name: Validate release tag
+    runs-on: ubuntu-latest
+    steps:
+      # The tag globs above already filter, but globs are easy to fool
+      # (e.g. a tag containing a newline-free oddity); this is the
+      # authoritative check.
+      - name: Enforce release tag format
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          if printf '%s' "$TAG" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-(alpha|beta|snapshot))?$'; then
+            echo "Releasing $TAG"
+          else
+            echo "Tag '$TAG' is not a releasable version (x.y.z with optional -alpha/-beta/-snapshot)." >&2
+            exit 1
+          fi
+
+  firmware:
+    name: Build ESP32-C6 firmware
+    needs: validate-tag
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build firmware and merged flash image
+        uses: espressif/esp-idf-ci-action@v1
+        with:
+          esp_idf_version: v5.5
+          target: esp32c6
+          path: firmware
+          command: idf.py build merge-bin -o powertooth-merged.bin
+
+      - name: Package firmware bundle
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          # File names use an underscore before the prerelease suffix:
+          # tag 0.1.0-beta -> powertooth-fw-0.1.0_beta.zip
+          VERSION=$(printf '%s' "$TAG" | tr '-' '_')
+          sudo chown -R "$USER" firmware/build
+          cat > firmware/build/FLASH.txt <<EOF
+          PowerTooth firmware $TAG (ESP32-C6)
+
+          Easiest flash (single image at offset 0x0):
+
+            esptool.py --chip esp32c6 -p /dev/ttyACM0 write_flash 0x0 powertooth-merged.bin
+
+          Alternatively flash the individual parts at the offsets listed in
+          flasher_args.json, or use idf.py flash from a source checkout.
+          EOF
+          cd firmware/build
+          zip "$GITHUB_WORKSPACE/powertooth-fw-$VERSION.zip" \
+            powertooth-merged.bin \
+            powertooth.bin \
+            bootloader/bootloader.bin \
+            partition_table/partition-table.bin \
+            flasher_args.json \
+            FLASH.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: firmware
+          path: powertooth-fw-*.zip
+          if-no-files-found: error
+
+  host:
+    name: Build Linux host bundle
+    needs: validate-tag
+    runs-on: ubuntu-latest
+    # The same Fedora image and package set publish.sh uses in its Podman
+    # builder, so release bundles are built in the identical environment as
+    # local ones.
+    container: registry.fedoraproject.org/fedora:latest
+    steps:
+      - name: Install build dependencies
+        run: dnf install -y git rust cargo gcc dbus-devel pkgconf-pkg-config zip
+
+      - uses: actions/checkout@v4
+
+      - name: Build and package host
+        env:
+          TAG: ${{ github.ref_name }}
+          POWERTOOTH_VERSION: ${{ github.ref_name }}
+        run: |
+          # File names use an underscore before the prerelease suffix:
+          # tag 0.1.0-beta -> powertooth-host-0.1.0_beta.zip
+          VERSION=$(printf '%s' "$TAG" | tr '-' '_')
+          sh host/package-linux.sh
+          mv host/bin/build/powertooth-linux-x86_64.zip \
+            "powertooth-host-$VERSION.zip"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: host
+          path: powertooth-host-*.zip
+          if-no-files-found: error
+
+  release:
+    name: Publish GitHub release
+    needs: [firmware, host]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          REPO: ${{ github.repository }}
+        run: |
+          prerelease_flag=""
+          case "$TAG" in
+            *-alpha|*-beta|*-snapshot) prerelease_flag="--prerelease" ;;
+          esac
+          gh release create "$TAG" dist/* \
+            --repo "$REPO" \
+            --title "PowerTooth $TAG" \
+            --generate-notes \
+            $prerelease_flag
